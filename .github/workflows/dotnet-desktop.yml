@@ -2,31 +2,38 @@ name: Build
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: windows-latest
 
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
-    - name: Setup .NET 8
-      uses: actions/setup-dotnet@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
       with:
-        dotnet-version: '8.0.x'
+        dotnet-version: 8.0.x
 
-    - name: Restore dependencies
-      run: dotnet restore OpenCVCameraTracking.slnx
+    - name: Restore
+      run: |
+        dotnet restore src/OpenCVCameraTracking.Core/OpenCVCameraTracking.Core.csproj
+        dotnet restore src/OpenCVCameraTracking/OpenCVCameraTracking.csproj
 
     - name: Build
-      run: dotnet build OpenCVCameraTracking.slnx --configuration Release --no-restore
+      run: |
+        dotnet build src/OpenCVCameraTracking.Core/OpenCVCameraTracking.Core.csproj -c Release --no-restore
+        dotnet build src/OpenCVCameraTracking/OpenCVCameraTracking.csproj -c Release --no-restore
 
     - name: Upload build artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: OpenCVCameraTracking
         path: |
