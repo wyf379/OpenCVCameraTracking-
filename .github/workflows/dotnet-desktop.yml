@@ -2,9 +2,10 @@ name: Build
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -17,29 +18,41 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v5
 
-    - name: Setup .NET
+    - name: Setup .NET 8
       uses: actions/setup-dotnet@v5
       with:
         dotnet-version: 8.0.x
 
-     - name: Setup MSBuild
-       uses: microsoft/setup-msbuild@v2
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
 
-    - name: Restore
+    - name: Restore dependencies
       run: |
         dotnet restore src/OpenCVCameraTracking.Core/OpenCVCameraTracking.Core.csproj
         dotnet restore src/OpenCVCameraTracking/OpenCVCameraTracking.csproj
 
-    - name: Build
+    - name: Build Core library
       run: |
-        msbuild src/OpenCVCameraTracking.Core/OpenCVCameraTracking.Core.csproj -c Release --no-restore
-        msbuild src/OpenCVCameraTracking/OpenCVCameraTracking.csproj -c Release --no-restore
+        msbuild src/OpenCVCameraTracking.Core/OpenCVCameraTracking.Core.csproj `
+          /p:Configuration=Release `
+          /p:Platform=x64 `
+          /p:RestorePackages=false `
+          /verbosity:minimal
+
+    - name: Build main application
+      run: |
+        msbuild src/OpenCVCameraTracking/OpenCVCameraTracking.csproj `
+          /p:Configuration=Release `
+          /p:Platform=x64 `
+          /p:RestorePackages=false `
+          /verbosity:minimal
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v5
       with:
-        name: OpenCVCameraTracking
+        name: OpenCVCameraTracking-Release
         path: |
-          src/OpenCVCameraTracking/bin/Release/
-          src/OpenCVCameraTracking.Core/bin/Release/
+          src/OpenCVCameraTracking/bin/x64/Release/
+          src/OpenCVCameraTracking.Core/bin/x64/Release/
         retention-days: 7
+        if-no-files-found: warn
